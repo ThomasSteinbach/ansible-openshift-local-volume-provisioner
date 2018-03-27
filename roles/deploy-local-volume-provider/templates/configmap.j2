@@ -1,0 +1,19 @@
+kind: ConfigMap
+metadata:
+  name: local-volume-config
+data:
+{% for item in remote_mounts %}  "{{ item.storageclass }}": |
+    {
+      "hostDir": "/mnt/local-storage/{{ item.storageclass }}",
+      "mountDir": "/mnt/local-storage/{{ item.storageclass }}"
+    }{% endfor %}
+{% for item in local_mounts %}  "{{ item.storageclass }}": |
+    {
+      "hostDir": "/mnt/local-storage/{{ item.storageclass }}",
+      "mountDir": "/mnt/local-storage/{{ item.storageclass }}"
+    }{% endfor %}
+{% for item in plain_directories %}  "{{ item.storageclass }}": |
+    {
+      "hostDir": "/mnt/local-storage/{{ item.storageclass }}",
+      "mountDir": "/mnt/local-storage/{{ item.storageclass }}"
+    }{% endfor %}

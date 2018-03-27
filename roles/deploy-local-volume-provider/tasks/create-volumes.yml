@@ -1,0 +1,36 @@
+---
+
+- name: login to OpenShift
+  command: oc login -u system:admin
+  changed_when: false
+
+- name: shutdown local volume provisioner
+  command: oc delete ds/local-volume-provisioner -n local-storage
+  register: result
+  failed_when: "'not found' not in result.stderr and result.rc != 0"
+
+- name: setup remote mounts
+  mount:
+    path: "/mnt/local-storage/{{ item.storageclass }}/{{ item.volumename }}"
+    src: "{{ item.src }}"
+    fstype: "{{ item.fstype }} }}"
+    opts: "{{ item.opts | default('') }}"
+    state: "{{ item.state | default('mounted') }}"
+  with_items: "{{ remote_mounts }}"
+
+- name: setup local directory mounts
+  mount:
+    path: "/mnt/local-storage/{{ item.storageclass }}/{{ item.volumename }}"
+    src: "{{ item.path }}"
+    fstype: none
+    opts: "defaults,bind"
+    state: "{{ item.state | default('mounted') }}"
+  with_items: "{{ local_mounts }}"
+
+- name: setup plain directories
+  file:
+    path: "/mnt/local-storage/{{ item[0].storageclass }}/{{ item[1] }}"
+    state: "{{ item.state | default('directory') }}"
+  with_subelements:
+    - "{{ plain_directories }}"
+    - volumes

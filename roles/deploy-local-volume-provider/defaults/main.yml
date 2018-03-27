@@ -1,0 +1,24 @@
+---
+local_storage_provisioner_image: quay.io/external_storage/local-volume-provisioner:v2.1.0
+
+remote_mounts: []
+# - storageclass: <storageclassname>
+#   volumename: <volumename>
+#   src: <path|UUID|LABEL>
+#   fstype: <fstype>
+#   opts: <(optional) opts>
+#   state: <(optional) default is 'present'; use 'absent' to delete>
+
+local_mounts: [] 
+# - storageclass: <storageclassname>
+#   volumename: <volumename>
+#   path: <(optional) path if you want to use existing path>
+#   state: <(optional) default is 'present'; use 'absent' to delete>
+
+plain_directories: []
+# - storageclass: <storageclassname>
+#   volumes:
+#   - <volumename 1>
+#   - ...
+#   - <volumename n>
+#   state: <(optional) defaults to 'directory'; use 'absent' to delete>

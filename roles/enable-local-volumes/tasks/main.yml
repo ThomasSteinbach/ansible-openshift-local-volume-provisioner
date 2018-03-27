@@ -1,0 +1,16 @@
+---
+- name: activate PersistentLocalVolumes feature on master
+  yedit:
+    src: "{{ master_config_file }}"
+    key: kubernetesMasterConfig.apiServerArguments.feature-gates
+    value: PersistentLocalVolumes=true
+    append: true
+  when: "'master' in group_names"
+
+- name: activate PersistentLocalVolumes feature on node
+  yedit:
+    src: "{{ node_config_file }}"
+    key: kubeletArguments.feature-gates
+    value: PersistentLocalVolumes=true
+    append: true
+  when: "'node' in group_names"

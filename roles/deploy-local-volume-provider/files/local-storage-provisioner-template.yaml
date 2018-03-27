@@ -1,0 +1,88 @@
+# Original template:
+# https://raw.githubusercontent.com/openshift/origin/master/examples/storage-examples/local-examples/local-storage-provisioner-template.yaml
+apiVersion: v1
+kind: Template
+metadata:
+  name: "local-storage-provisioner"
+objects:
+
+# $SERVICE_ACCOUNT must be able to manipulate with PVs
+- apiVersion: v1
+  kind: ClusterRoleBinding
+  metadata:
+    name: local-storage:provisioner-pv-binding
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: system:persistent-volume-provisioner
+  subjects:
+  - kind: ServiceAccount
+    name: local-storage-admin
+    namespace: local-storage
+
+# $SERVICE_ACCOUNT must be able to list nodes
+- apiVersion: v1
+  kind: ClusterRoleBinding
+  metadata:
+    name: local-storage:provisioner-node-binding
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: system:node
+  subjects:
+  - kind: ServiceAccount
+    name: local-storage-admin
+    namespace: local-storage
+
+# DaemonSet with provisioners
+- apiVersion: extensions/v1beta1
+  kind: DaemonSet
+  metadata:
+    name: local-volume-provisioner
+  spec:
+    template:
+      metadata:
+        labels:
+          app: local-volume-provisioner
+      spec:
+        containers:
+        - env:
+          - name: MY_NODE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
+          - name: MY_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: VOLUME_CONFIG_NAME
+            value: local-volume-config
+          image: ${PROVISIONER_IMAGE}
+          name: provisioner
+          securityContext:
+            runAsUser: 0
+            seLinuxOptions:
+              # Trump SELinux contexts of all pods that could write files to local volume - the provisioner must be able to clean their files.
+              level: "s0:c0.c1023"
+          volumeMounts:
+          - mountPath: /mnt/local-storage
+            name: local-storage
+          - mountPath: /etc/provisioner/config
+            name: provisioner-config
+            readOnly: true
+        serviceAccountName: "local-storage-admin"
+        volumes:
+        - hostPath:
+            path: /mnt/local-storage
+          name: local-storage
+        - configMap:
+            name: local-volume-config
+          name: provisioner-config
+
+parameters:
+  - name: PROVISIONER_IMAGE
+    description: Name of image with local provisioner.
+    required: true
+    value: quay.io/external_storage/local-volume-provisioner:v1.0.1

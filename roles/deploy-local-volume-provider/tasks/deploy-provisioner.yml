@@ -1,0 +1,26 @@
+---
+
+- name: login to OpenShift
+  command: oc login -u system:admin
+  changed_when: false
+
+- name: create OpenShift project
+  command: "oc new-project local-storage"
+  register: result
+  changed_when: "'already exists' not in result.stderr"
+  failed_when: "'already exists' not in result.stderr and result.rc != 0"
+
+- name: load local provisioner ConfigMap
+  shell: echo {{ "'" + lookup('template', 'configmap.j2') + "'" }} | oc apply -n local-storage -f -
+
+- name: create ServiceAccount
+  command: oc create serviceaccount local-storage-admin -n local-storage
+  register: result
+  changed_when: "'AlreadyExists' not in result.stderr"
+  failed_when: "'AlreadyExists' not in result.stderr and result.stdout != 0"
+
+- name: make ServiceAccount privileged
+  command: oc adm policy add-scc-to-user privileged -z local-storage-admin -n local-storage
+
+- name: deploy local storage provisioner template
+  shell: echo {{ "'" + lookup('file', 'local-storage-provisioner-template.yaml') + "'" }} | oc process -p PROVISIONER_IMAGE="{{ local_storage_provisioner_image }}" -f - | oc apply -n local-storage -f -

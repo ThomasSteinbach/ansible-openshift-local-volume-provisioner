@@ -1,0 +1,15 @@
+- hosts: localhost
+  become: true
+
+  roles:
+  - role: external_modules/yedit/roles/lib_yaml_editor
+  - role: enable-local-volumes
+    master_config_file: /home/thomass/xarifOpenShift/host-config-dir/master/master-config.yaml
+    node_config_file: /home/thomass/xarifOpenShift/host-config-dir/node-localhost/node-config.yaml
+  - role: deploy-local-volume-provider
+    plain_directories:
+      - storageclass: localdir
+        volumes:
+          - dir01
+          - dir02
+          - dir03
